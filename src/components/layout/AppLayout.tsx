@@ -92,6 +92,9 @@ const AppLayout: React.FC = () => {
                         <LogOut size={20} />
                         Logout
                     </button>
+                    <div style={{ marginTop: '1rem', fontSize: '0.7rem', color: 'var(--text-secondary)', textAlign: 'center', opacity: 0.5 }}>
+                        v1.0.1 (Deployed: {new Date().toLocaleString()})
+                    </div>
                 </div>
             </aside>
 
