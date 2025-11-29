@@ -1,7 +1,6 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { chapters } from '../data/chapters';
-
+import { topics } from '../data/topics';
 import { Link } from 'react-router-dom';
 import { BookOpen, Code, Trophy, ArrowRight } from 'lucide-react';
 
@@ -10,9 +9,19 @@ const Home: React.FC = () => {
 
     if (!user) return null;
 
-    const totalChapters = chapters.filter(c => c.techId === user.primaryTech).length;
-    const completedChaptersCount = user.completedChapters.length;
-    const progressPercentage = totalChapters > 0 ? Math.round((completedChaptersCount / totalChapters) * 100) : 0;
+    // Use first primary skill as current track or default to SQL
+    const currentTrack = user.primarySkills.length > 0 ? user.primarySkills[0] : 'sql';
+
+    const totalTopics = topics.filter(t => t.techId === currentTrack).length;
+
+    // For simplicity, let's just show total completed topics vs total topics in current track (approximation)
+    // Or better: count completed topics that belong to current track
+    const completedTrackTopics = user.completedTopics.filter(tId => {
+        const topic = topics.find(t => t.id === tId);
+        return topic?.techId === currentTrack;
+    }).length;
+
+    const progressPercentage = totalTopics > 0 ? Math.round((completedTrackTopics / totalTopics) * 100) : 0;
 
     return (
         <div>
@@ -21,7 +30,7 @@ const Home: React.FC = () => {
                     Welcome back, {user.name}!
                 </h1>
                 <p style={{ color: 'var(--text-secondary)' }}>
-                    You are currently on the <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>{user.primaryTech.toUpperCase()}</span> track ({user.experienceLevel} level).
+                    You are currently on the <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>{currentTrack.toUpperCase()}</span> track ({user.experienceLevel} level).
                 </p>
             </header>
 
@@ -29,11 +38,11 @@ const Home: React.FC = () => {
             <div className="grid-cols-3" style={{ marginBottom: '2rem' }}>
                 <div className="card">
                     <div className="flex-between" style={{ marginBottom: '1rem' }}>
-                        <h3 style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Chapters Completed</h3>
+                        <h3 style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Topics Completed</h3>
                         <BookOpen size={20} color="var(--accent-primary)" />
                     </div>
                     <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>
-                        {completedChaptersCount} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>/ {totalChapters}</span>
+                        {completedTrackTopics} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>/ {totalTopics}</span>
                     </div>
                     <div style={{ marginTop: '0.5rem', height: '4px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '2px' }}>
                         <div style={{ width: `${progressPercentage}%`, height: '100%', backgroundColor: 'var(--accent-primary)', borderRadius: '2px' }} />

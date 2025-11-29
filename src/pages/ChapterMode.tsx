@@ -1,17 +1,35 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { chapters } from '../data/chapters';
+import { topics } from '../data/topics';
 import { Link } from 'react-router-dom';
-import { CheckCircle, Circle, ChevronRight } from 'lucide-react';
+import { CheckCircle, Circle, ChevronRight, Database, Code2, Terminal } from 'lucide-react';
+import type { TechId } from '../types';
 
 const ChapterMode: React.FC = () => {
     const { user } = useApp();
+    const [selectedTech, setSelectedTech] = useState<TechId | null>(null);
 
     if (!user) return null;
 
-    const userChapters = chapters
-        .filter(c => c.techId === user.primaryTech)
+    // Initialize selectedTech with user's primary skill if not set
+    if (!selectedTech && user.primarySkills.length > 0) {
+        setSelectedTech(user.primarySkills[0]);
+    }
+
+    const currentTech = selectedTech || 'sql';
+
+    const userTopics = topics
+        .filter(t => t.techId === currentTech)
         .sort((a, b) => a.order - b.order);
+
+    const getIcon = (id: string) => {
+        switch (id) {
+            case 'sql': return <Database size={20} />;
+            case 'plsql': return <Code2 size={20} />;
+            case 'shell': return <Terminal size={20} />;
+            default: return <Database size={20} />;
+        }
+    };
 
     return (
         <div>
@@ -20,17 +38,32 @@ const ChapterMode: React.FC = () => {
                     Chapter-wise Learning
                 </h1>
                 <p style={{ color: 'var(--text-secondary)' }}>
-                    Follow the structured path to master {user.primaryTech.toUpperCase()}.
+                    Select a technology and master the topics one by one.
                 </p>
             </header>
 
+            {/* Tech Selector */}
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+                {(['sql', 'plsql', 'shell'] as TechId[]).map(tech => (
+                    <button
+                        key={tech}
+                        className={`btn ${currentTech === tech ? 'btn-primary' : 'btn-outline'}`}
+                        onClick={() => setSelectedTech(tech)}
+                        style={{ textTransform: 'uppercase', gap: '0.5rem' }}
+                    >
+                        {getIcon(tech)}
+                        {tech}
+                    </button>
+                ))}
+            </div>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {userChapters.map((chapter) => {
-                    const isCompleted = user.completedChapters.includes(chapter.id);
+                {userTopics.map((topic) => {
+                    const isCompleted = user.completedTopics.includes(topic.id);
                     return (
                         <Link
-                            key={chapter.id}
-                            to={`/learn/${chapter.id}`}
+                            key={topic.id}
+                            to={`/learn/${topic.id}`}
                             className="card"
                             style={{
                                 display: 'flex',
@@ -49,10 +82,10 @@ const ChapterMode: React.FC = () => {
                             </div>
                             <div style={{ flex: 1 }}>
                                 <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.25rem' }}>
-                                    {chapter.title}
+                                    {topic.title}
                                 </h3>
                                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-                                    {chapter.description}
+                                    {topic.description}
                                 </p>
                             </div>
                             <div>

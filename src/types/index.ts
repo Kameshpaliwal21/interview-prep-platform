@@ -6,10 +6,11 @@ export type Difficulty = 'easy' | 'medium' | 'hard';
 export interface User {
     id: string;
     name: string;
-    email: string;
+    designation: string;
+    yearsOfExperience: string;
     experienceLevel: ExperienceLevel;
-    primaryTech: TechId;
-    completedChapters: string[]; // chapterIds
+    primarySkills: TechId[];
+    completedTopics: string[]; // topicIds
     completedQuestions: string[]; // questionIds
     score: number;
 }
@@ -20,7 +21,7 @@ export interface Technology {
     description: string;
 }
 
-export interface Chapter {
+export interface Topic {
     id: string;
     techId: TechId;
     title: string;
@@ -33,7 +34,7 @@ export interface Chapter {
 export interface Question {
     id: string;
     techId: TechId;
-    chapterId?: string; // Optional for direct coding questions
+    topicId?: string; // Renamed from chapterId
     title: string;
     problemStatement: string;
     inputExample?: string;

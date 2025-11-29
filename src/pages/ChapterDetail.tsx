@@ -1,22 +1,22 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { chapters } from '../data/chapters';
+import { topics } from '../data/topics';
 import { questions } from '../data/questions';
 import TheoryViewer from '../components/learning/TheoryViewer';
-import QuestionSolver from '../components/learning/QuestionSolver';
+import QuestionRunner from '../components/practice/QuestionRunner';
 import { BookOpen, List, ArrowLeft } from 'lucide-react';
 
 const ChapterDetail: React.FC = () => {
-    const { chapterId } = useParams<{ chapterId: string }>();
+    const { topicId } = useParams<{ topicId: string }>();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'theory' | 'questions'>('theory');
     const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
 
-    const chapter = chapters.find(c => c.id === chapterId);
-    const chapterQuestions = questions.filter(q => q.chapterId === chapterId);
+    const topic = topics.find(t => t.id === topicId);
+    const topicQuestions = questions.filter(q => q.topicId === topicId);
 
-    if (!chapter) {
-        return <div>Chapter not found</div>;
+    if (!topic) {
+        return <div>Topic not found</div>;
     }
 
     return (
@@ -25,7 +25,7 @@ const ChapterDetail: React.FC = () => {
                 <button onClick={() => navigate('/learn')} className="btn btn-outline" style={{ padding: '0.5rem' }}>
                     <ArrowLeft size={20} />
                 </button>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{chapter.title}</h1>
+                <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{topic.title}</h1>
             </div>
 
             {/* Tabs */}
@@ -42,7 +42,7 @@ const ChapterDetail: React.FC = () => {
                     style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0, borderBottom: 'none' }}
                     onClick={() => setActiveTab('questions')}
                 >
-                    <List size={18} /> Practice Questions ({chapterQuestions.length})
+                    <List size={18} /> Practice Questions ({topicQuestions.length})
                 </button>
             </div>
 
@@ -50,7 +50,7 @@ const ChapterDetail: React.FC = () => {
             <div style={{ flex: 1, overflow: 'hidden' }}>
                 {activeTab === 'theory' && (
                     <div className="card" style={{ height: '100%', overflowY: 'auto' }}>
-                        <TheoryViewer content={chapter.content} />
+                        <TheoryViewer content={topic.content} />
                         <div style={{ marginTop: '2rem', textAlign: 'center' }}>
                             <button
                                 className="btn btn-primary"
@@ -66,7 +66,7 @@ const ChapterDetail: React.FC = () => {
                     <div style={{ height: '100%', display: 'flex', gap: '1rem' }}>
                         {/* Question List Sidebar */}
                         <div className="card" style={{ width: '300px', overflowY: 'auto', padding: '0.5rem' }}>
-                            {chapterQuestions.map((q, index) => (
+                            {topicQuestions.map((q, index) => (
                                 <button
                                     key={q.id}
                                     className={`btn ${selectedQuestionId === q.id ? 'btn-primary' : 'btn-outline'}`}
@@ -82,8 +82,8 @@ const ChapterDetail: React.FC = () => {
                         {/* Question Solver Area */}
                         <div style={{ flex: 1, overflow: 'hidden' }}>
                             {selectedQuestionId ? (
-                                <QuestionSolver
-                                    question={chapterQuestions.find(q => q.id === selectedQuestionId)!}
+                                <QuestionRunner
+                                    question={topicQuestions.find(q => q.id === selectedQuestionId)!}
                                     onComplete={() => { }}
                                 />
                             ) : (

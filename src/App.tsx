@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import ChapterMode from './pages/ChapterMode';
 import ChapterDetail from './pages/ChapterDetail';
 import PracticeMode from './pages/PracticeMode';
+import PracticeDetail from './pages/PracticeDetail';
 import InterviewMode from './pages/InterviewMode';
 
 const AppRoutes: React.FC = () => {
@@ -25,8 +26,9 @@ const AppRoutes: React.FC = () => {
       <Route path="/" element={<AppLayout />}>
         <Route index element={<Home />} />
         <Route path="learn" element={<ChapterMode />} />
-        <Route path="learn/:chapterId" element={<ChapterDetail />} />
+        <Route path="learn/:topicId" element={<ChapterDetail />} />
         <Route path="practice" element={<PracticeMode />} />
+        <Route path="practice/:topicId" element={<PracticeDetail />} />
         <Route path="interview" element={<InterviewMode />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

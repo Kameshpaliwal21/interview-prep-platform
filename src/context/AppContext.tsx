@@ -4,7 +4,7 @@ import type { User, TechId, ExperienceLevel } from '../types';
 interface AppState {
     user: User | null;
     isLoading: boolean;
-    login: (name: string, email: string, level: ExperienceLevel, tech: TechId) => void;
+    login: (name: string, designation: string, yearsOfExperience: string, level: ExperienceLevel, skills: TechId[]) => void;
     logout: () => void;
     updateProgress: (questionId: string) => void;
 }
@@ -25,14 +25,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setIsLoading(false);
     }, []);
 
-    const login = (name: string, email: string, level: ExperienceLevel, tech: TechId) => {
+    const login = (name: string, designation: string, yearsOfExperience: string, level: ExperienceLevel, skills: TechId[]) => {
         const newUser: User = {
             id: crypto.randomUUID(),
             name,
-            email,
+            designation,
+            yearsOfExperience,
             experienceLevel: level,
-            primaryTech: tech,
-            completedChapters: [],
+            primarySkills: skills,
+            completedTopics: [],
             completedQuestions: [],
             score: 0,
         };
