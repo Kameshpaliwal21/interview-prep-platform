@@ -11,7 +11,7 @@ const PracticeMode: React.FC = () => {
 
     if (!user) return null;
 
-    if (!selectedTech && user.primarySkills.length > 0) {
+    if (!selectedTech && user.primarySkills && user.primarySkills.length > 0) {
         setSelectedTech(user.primarySkills[0]);
     }
 

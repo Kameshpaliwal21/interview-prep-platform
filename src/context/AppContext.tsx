@@ -20,7 +20,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     useEffect(() => {
         const storedUser = localStorage.getItem(STORAGE_KEY);
         if (storedUser) {
-            setUser(JSON.parse(storedUser));
+            try {
+                const parsedUser = JSON.parse(storedUser);
+                // Validate that the user object has the new required fields
+                if (parsedUser && Array.isArray(parsedUser.primarySkills)) {
+                    setUser(parsedUser);
+                } else {
+                    // Legacy data found, clear it to force re-onboarding
+                    console.warn('Legacy user data detected. Clearing storage to force re-onboarding.');
+                    localStorage.removeItem(STORAGE_KEY);
+                    setUser(null);
+                }
+            } catch (error) {
+                console.error('Failed to parse user data:', error);
+                localStorage.removeItem(STORAGE_KEY);
+                setUser(null);
+            }
         }
         setIsLoading(false);
     }, []);

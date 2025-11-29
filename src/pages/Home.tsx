@@ -10,7 +10,7 @@ const Home: React.FC = () => {
     if (!user) return null;
 
     // Use first primary skill as current track or default to SQL
-    const currentTrack = user.primarySkills.length > 0 ? user.primarySkills[0] : 'sql';
+    const currentTrack = (user.primarySkills && user.primarySkills.length > 0) ? user.primarySkills[0] : 'sql';
 
     const totalTopics = topics.filter(t => t.techId === currentTrack).length;
 
