@@ -64,3 +64,28 @@ export interface Attempt {
     viewedSolution: boolean;
     timestamp: number;
 }
+
+export interface TestCase {
+    id: string;
+    description: string;
+    input?: string;
+    expectedOutput: string;
+    isHidden: boolean;
+}
+
+export interface JudgeResult {
+    status: 'success' | 'error' | 'syntax_error';
+    output?: string;
+    error?: {
+        line: number;
+        column: number;
+        message: string;
+    };
+    testResults?: {
+        testCaseId: string;
+        passed: boolean;
+        actualOutput?: string;
+        message?: string;
+    }[];
+    overallPassed?: boolean;
+}

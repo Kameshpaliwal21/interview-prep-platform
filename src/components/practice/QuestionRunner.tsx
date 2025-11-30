@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import type { Question } from '../../types';
+import type { Question, JudgeResult } from '../../types';
 import { solutions } from '../../data/solutions';
 import { useApp } from '../../context/AppContext';
 import ReactMarkdown from 'react-markdown';
-import { Check, Play, Lightbulb, Bot } from 'lucide-react';
+import { Check, Play, Lightbulb, Bot, AlertCircle, Terminal } from 'lucide-react';
 import Timer from './Timer';
+import CodeEditor from './CodeEditor';
+import { JudgeService } from '../../services/JudgeService';
 
 interface QuestionRunnerProps {
     question: Question;
@@ -19,12 +21,17 @@ const QuestionRunner: React.FC<QuestionRunnerProps> = ({ question, onComplete })
     const [aiHint, setAiHint] = useState<string | null>(null);
     const [isAiThinking, setIsAiThinking] = useState(false);
 
+    // Judge State
+    const [isRunning, setIsRunning] = useState(false);
+    const [judgeResult, setJudgeResult] = useState<JudgeResult | null>(null);
+
     // Reset state when question changes
     useEffect(() => {
         setCode('');
         setIsSubmitted(false);
         setActiveTab('problem');
         setAiHint(null);
+        setJudgeResult(null);
     }, [question.id]);
 
     const questionSolutions = solutions.filter(s => s.questionId === question.id);
@@ -40,16 +47,43 @@ const QuestionRunner: React.FC<QuestionRunnerProps> = ({ question, onComplete })
         }
     };
 
-    const handleRun = () => {
-        alert('Code executed! (Simulation)');
+    const handleRun = async () => {
+        setIsRunning(true);
+        setJudgeResult(null);
+        try {
+            const result = await JudgeService.runCode(question.id, question.techId, code);
+            setJudgeResult(result);
+        } catch (error) {
+            console.error(error);
+            setJudgeResult({ status: 'error', output: 'An error occurred while running the code.' });
+        } finally {
+            setIsRunning(false);
+        }
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (isSubmitted) return;
-        setIsSubmitted(true);
-        updateProgress(question.id);
-        setActiveTab('solution');
-        onComplete();
+        setIsRunning(true);
+        setJudgeResult(null);
+        try {
+            const result = await JudgeService.submitCode(question.id, question.techId, code);
+            setJudgeResult(result);
+
+            if (result.overallPassed) {
+                setIsSubmitted(true);
+                updateProgress(question.id);
+                // Don't auto-switch tab, let user see success
+                // setActiveTab('solution'); 
+                // onComplete(); // Maybe wait for user to click "Next" or something? 
+                // For now, let's keep existing behavior but maybe delay it or show a success modal?
+                // The requirement says "Display Overall pass/fail", so we should show that first.
+            }
+        } catch (error) {
+            console.error(error);
+            setJudgeResult({ status: 'error', output: 'An error occurred while submitting the code.' });
+        } finally {
+            setIsRunning(false);
+        }
     };
 
     const handleTimeUp = () => {
@@ -148,7 +182,7 @@ const QuestionRunner: React.FC<QuestionRunnerProps> = ({ question, onComplete })
                 </div>
 
                 {/* Right Panel: Editor */}
-                <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+                <div className="card" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                     <div style={{ marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', display: 'flex', justifyContent: 'space-between' }}>
                         <span>Your Solution ({question.techId.toUpperCase()})</span>
                         {!isSubmitted && (
@@ -166,25 +200,77 @@ const QuestionRunner: React.FC<QuestionRunnerProps> = ({ question, onComplete })
                         </div>
                     )}
 
-                    <textarea
-                        className="input"
-                        style={{ flex: 1, fontFamily: 'var(--font-mono)', resize: 'none', minHeight: '300px' }}
-                        value={code}
-                        onChange={(e) => setCode(e.target.value)}
-                        placeholder="Write your code here..."
-                        disabled={isSubmitted}
-                    />
+                    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                        <CodeEditor
+                            value={code}
+                            onChange={setCode}
+                            language={question.techId}
+                            readOnly={isSubmitted || isRunning}
+                            height="100%"
+                        />
+                    </div>
+
+                    {/* Results Section */}
+                    {judgeResult && (
+                        <div style={{ marginTop: '1rem', maxHeight: '200px', overflowY: 'auto', borderTop: '1px solid var(--border-color)', paddingTop: '0.5rem' }}>
+                            {judgeResult.status === 'syntax_error' && (
+                                <div style={{ color: 'var(--error-color)', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                                    <AlertCircle size={16} style={{ marginTop: '2px' }} />
+                                    <div>
+                                        <strong>Syntax Error:</strong> Line {judgeResult.error?.line}, Col {judgeResult.error?.column}: {judgeResult.error?.message}
+                                    </div>
+                                </div>
+                            )}
+
+                            {judgeResult.status === 'success' && judgeResult.output && (
+                                <div>
+                                    <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <Terminal size={14} /> Output
+                                    </h4>
+                                    <pre style={{ backgroundColor: 'var(--bg-primary)', padding: '0.5rem', borderRadius: '4px', fontSize: '0.8rem', whiteSpace: 'pre-wrap' }}>
+                                        {judgeResult.output}
+                                    </pre>
+                                </div>
+                            )}
+
+                            {judgeResult.testResults && (
+                                <div style={{ marginTop: '0.5rem' }}>
+                                    <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem' }}>Test Results</h4>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                        {judgeResult.testResults.map((tr, idx) => (
+                                            <div key={idx} style={{
+                                                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                                padding: '0.5rem', borderRadius: '4px',
+                                                backgroundColor: tr.passed ? 'rgba(var(--success-rgb), 0.1)' : 'rgba(var(--error-rgb), 0.1)',
+                                                border: `1px solid ${tr.passed ? 'var(--success-color)' : 'var(--error-color)'}`
+                                            }}>
+                                                {tr.passed ? <Check size={16} color="var(--success-color)" /> : <AlertCircle size={16} color="var(--error-color)" />}
+                                                <span style={{ fontSize: '0.875rem' }}>Test Case {idx + 1}: {tr.passed ? 'Passed' : 'Failed'}</span>
+                                                {!tr.passed && tr.message && <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>- {tr.message}</span>}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {judgeResult.overallPassed && (
+                                        <div style={{ marginTop: '0.5rem', color: 'var(--success-color)', fontWeight: 600, textAlign: 'center' }}>
+                                            All Test Cases Passed!
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                        <button className="btn btn-secondary" onClick={handleRun} disabled={isSubmitted}>
-                            <Play size={16} /> Run
+                        <button className="btn btn-secondary" onClick={handleRun} disabled={isSubmitted || isRunning}>
+                            <Play size={16} /> {isRunning ? 'Running...' : 'Run'}
                         </button>
                         {isSubmitted ? (
                             <button className="btn btn-outline" onClick={() => askAI('review')} disabled={isAiThinking}>
                                 <Bot size={16} /> Ask AI to Review
                             </button>
                         ) : (
-                            <button className="btn btn-primary" onClick={handleSubmit}>
-                                <Check size={16} /> Submit
+                            <button className="btn btn-primary" onClick={handleSubmit} disabled={isRunning}>
+                                <Check size={16} /> {isRunning ? 'Submitting...' : 'Submit'}
                             </button>
                         )}
                     </div>
