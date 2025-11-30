@@ -1,52 +1,40 @@
-import type { Question } from '../types';
-import { topics } from './topics';
+import type { Question, TechId, Difficulty, ExperienceLevel } from '../types';
+import { sqlQuestionsData } from './sql_questions_json';
+import { plsqlQuestionsData } from './plsql_questions_json';
+import { shellQuestionsData } from './shell_questions_json';
 
 const generateQuestions = (): Question[] => {
     const questions: Question[] = [];
-    topics.forEach(topic => {
-        // 1 Easy
-        questions.push({
-            id: `${topic.id}-e1`,
-            techId: topic.techId,
-            topicId: topic.id,
-            title: `Basics of ${topic.title}`,
-            problemStatement: `Explain the basic concept of ${topic.title} and provide a simple example.`,
-            difficulty: 'easy',
-            experienceLevel: 'fresher',
-            type: 'theory',
-            tags: [topic.id, 'basics']
+
+    const processQuestions = (data: any) => {
+        data.questions.forEach((q: any) => {
+            let expLevel: ExperienceLevel = 'fresher';
+            if (q.difficulty === 'medium') expLevel = 'entry';
+            if (q.difficulty === 'hard') expLevel = 'mid';
+
+            questions.push({
+                id: q.id,
+                techId: q.technology as TechId,
+                topicId: q.topicId,
+                title: `${q.topicName} - ${q.difficulty.charAt(0).toUpperCase() + q.difficulty.slice(1)}`,
+                problemStatement: q.question,
+                difficulty: q.difficulty as Difficulty,
+                experienceLevel: expLevel,
+                type: 'coding', // Defaulting to coding/scripting
+                tags: [q.topicId, q.difficulty]
+            });
         });
+    };
 
-        // 2 Medium
-        for (let i = 1; i <= 2; i++) {
-            questions.push({
-                id: `${topic.id}-m${i}`,
-                techId: topic.techId,
-                topicId: topic.id,
-                title: `Intermediate ${topic.title} - ${i}`,
-                problemStatement: `Solve this intermediate problem related to ${topic.title}. Focus on edge cases.`,
-                difficulty: 'medium',
-                experienceLevel: 'entry',
-                type: 'coding',
-                tags: [topic.id, 'intermediate']
-            });
-        }
+    // 1. Import SQL Questions
+    processQuestions(sqlQuestionsData);
 
-        // 2 Hard
-        for (let i = 1; i <= 2; i++) {
-            questions.push({
-                id: `${topic.id}-h${i}`,
-                techId: topic.techId,
-                topicId: topic.id,
-                title: `Advanced ${topic.title} - ${i}`,
-                problemStatement: `Solve this complex problem related to ${topic.title}. Optimize for performance.`,
-                difficulty: 'hard',
-                experienceLevel: 'mid',
-                type: 'coding',
-                tags: [topic.id, 'advanced']
-            });
-        }
-    });
+    // 2. Import PL/SQL Questions
+    processQuestions(plsqlQuestionsData);
+
+    // 3. Import Shell Scripting Questions
+    processQuestions(shellQuestionsData);
+
     return questions;
 };
 
