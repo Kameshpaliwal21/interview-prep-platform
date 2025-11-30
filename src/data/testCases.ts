@@ -1,4 +1,4 @@
-import { TestCase } from '../types';
+import type { TestCase } from '../types';
 
 export const sqlTestCases: Record<string, TestCase[]> = {
     'sql-basic-1': [

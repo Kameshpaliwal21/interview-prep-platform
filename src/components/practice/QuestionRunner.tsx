@@ -13,7 +13,7 @@ interface QuestionRunnerProps {
     onComplete: () => void;
 }
 
-const QuestionRunner: React.FC<QuestionRunnerProps> = ({ question, onComplete }) => {
+const QuestionRunner: React.FC<QuestionRunnerProps> = ({ question, onComplete: _onComplete }) => {
     const { updateProgress } = useApp();
     const [code, setCode] = useState('');
     const [isSubmitted, setIsSubmitted] = useState(false);
